@@ -96,10 +96,20 @@ def process_ffmpeg_compose(data, job_id):
                 if "argument" in option and option["argument"] is not None:
                     command.append(str(option["argument"]))
         input_path = download_file(input_data["file_url"], STORAGE_PATH)
+        
+        # ✅ Detect if it's a .txt file
+        if input_path.endswith(".txt"):
+            textfile_path = input_path
         command.extend(["-i", input_path])
     
     # Add filters
     if data.get("filters"):
+        # ✅ Replace __TEXTFILE__ in filter strings
+        if data.get("filters") and textfile_path:
+            for filter_obj in data["filters"]:
+                if "filter" in filter_obj and "textfile=__TEXTFILE__" in filter_obj["filter"]:
+                    filter_obj["filter"] = filter_obj["filter"].replace("textfile=__TEXTFILE__", f"textfile='{textfile_path}'")
+
         filter_complex = ";".join(filter_obj["filter"] for filter_obj in data["filters"])
         command.extend(["-filter_complex", filter_complex])
     
