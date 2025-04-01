@@ -79,6 +79,8 @@ def get_metadata(filename, metadata_requests, job_id):
 def process_ffmpeg_compose(data, job_id):
     output_filenames = []
     
+    textfile_path = None
+    
     # Build FFmpeg command
     command = ["ffmpeg"]
     
