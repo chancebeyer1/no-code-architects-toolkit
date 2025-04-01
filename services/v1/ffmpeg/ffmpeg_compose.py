@@ -55,6 +55,7 @@ def get_metadata(filename, metadata_requests, job_id):
 def process_ffmpeg_compose(data, job_id):
     output_filenames = []
     textfile_path = None
+    fontfile_path = None
     command = ["ffmpeg"]
 
     # Global options
@@ -76,22 +77,19 @@ def process_ffmpeg_compose(data, job_id):
         if input_path.endswith(".txt"):
             textfile_path = input_path
             print("📄 Found textfile path:", textfile_path)
+        elif input_path.endswith(".ttf"):
+            fontfile_path = input_path
+            print("🔤 Found fontfile path:", fontfile_path)
         else:
             command.extend(["-i", input_path])
-            
 
-    textfile_path = None
-    for input_data in data.get("inputs", []):
-        if input_data["file_url"].endswith(".txt"):
-            textfile_path = download_file(input_data["file_url"], STORAGE_PATH)
-            break
-
-
-    # Replace __TEXTFILE__ in filters
+    # Replace __TEXTFILE__ and __FONTFILE__
     if data.get("filters"):
         for filter_obj in data["filters"]:
             if "filter" in filter_obj:
                 print("🔍 Original filter:", filter_obj["filter"])
+
+                # Replace textfile
                 if "textfile=__TEXTFILE__" in filter_obj["filter"]:
                     if not textfile_path:
                         raise Exception("❌ __TEXTFILE__ used in filter, but no .txt input found.")
@@ -99,7 +97,23 @@ def process_ffmpeg_compose(data, job_id):
                     filter_obj["filter"] = filter_obj["filter"].replace(
                         "textfile=__TEXTFILE__", f"textfile='{textfile_path}'"
                     )
-                    print("✅ Updated filter:", filter_obj["filter"])
+
+                # Replace fontfile
+                if "fontfile=__FONTFILE__" in filter_obj["filter"]:
+                    if fontfile_path:
+                        print("✅ Replacing __FONTFILE__ with:", fontfile_path)
+                        filter_obj["filter"] = filter_obj["filter"].replace(
+                            "fontfile=__FONTFILE__", f"fontfile='{fontfile_path}'"
+                        )
+                    else:
+                        # fallback to font= if fontfile not found
+                        font_name = data.get("fallback_font", "Arial")
+                        print(f"⚠️ No font file provided. Falling back to font='{font_name}'")
+                        filter_obj["filter"] = filter_obj["filter"].replace(
+                            "fontfile=__FONTFILE__", f"font='{font_name}'"
+                        )
+
+                print("✅ Updated filter:", filter_obj["filter"])
 
         # Add combined filter_complex
         filter_complex = ";".join(filter_obj["filter"] for filter_obj in data["filters"])
@@ -124,7 +138,7 @@ def process_ffmpeg_compose(data, job_id):
 
         command.append(output_filename)
 
-    # Log the full command for debug
+    # Log the full command
     print("🔧 Final FFmpeg command:")
     print(" ".join(command))
 
