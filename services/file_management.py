@@ -1,35 +1,30 @@
+from urllib.parse import urlparse
 import os
 import uuid
 import requests
-from urllib.parse import urlparse, parse_qs
 
 def download_file(url, storage_path="/tmp/"):
-    # Parse the URL to extract the file ID from the query parameters
+    # Parse file extension from URL path (e.g. .jpg, .webm, .txt)
     parsed_url = urlparse(url)
-    query_params = parse_qs(parsed_url.query)
-    
-    # Use the 'id' parameter as the filename if it exists
+    _, ext = os.path.splitext(parsed_url.path)
+    if not ext:
+        ext = ".bin"  # fallback
+
     file_id = str(uuid.uuid4())
-    
-    #if not file_id:
-    #    raise ValueError("Invalid URL: 'id' parameter not found in the URL")
-    
-    # Ensure the storage directory exists
     if not os.path.exists(storage_path):
         os.makedirs(storage_path)
-    
-    # Use the file ID as the filename and save it in the specified storage path
-    local_filename = os.path.join(storage_path, f"{file_id}.mp4")  # Assuming mp4; adjust extension if needed
-    
-    # Download the file
+
+    local_filename = os.path.join(storage_path, f"{file_id}{ext}")
+
     response = requests.get(url, stream=True)
     response.raise_for_status()
-    
+
     with open(local_filename, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
-    
+
     return local_filename
+
 
 
 def delete_old_files():

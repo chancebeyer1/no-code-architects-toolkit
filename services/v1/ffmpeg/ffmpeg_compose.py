@@ -54,8 +54,7 @@ def get_metadata(filename, metadata_requests, job_id):
 
 def process_ffmpeg_compose(data, job_id):
     output_filenames = []
-    textfile_path = None  # ✅ Track downloaded .txt file
-
+    textfile_path = None
     command = ["ffmpeg"]
 
     # Global options
@@ -75,20 +74,34 @@ def process_ffmpeg_compose(data, job_id):
         input_path = download_file(input_data["file_url"], STORAGE_PATH)
 
         if input_path.endswith(".txt"):
-            textfile_path = input_path  # ✅ Save path to inject into filters
+            textfile_path = input_path
+            print("📄 Found textfile path:", textfile_path)
+        else:
+            command.extend(["-i", input_path])
+            
 
-        command.extend(["-i", input_path])
+    textfile_path = None
+    for input_data in data.get("inputs", []):
+        if input_data["file_url"].endswith(".txt"):
+            textfile_path = download_file(input_data["file_url"], STORAGE_PATH)
+            break
 
-    # ✅ Replace __TEXTFILE__ placeholder
-    if data.get("filters") and textfile_path:
-        for filter_obj in data["filters"]:
-            if "filter" in filter_obj and "textfile=__TEXTFILE__" in filter_obj["filter"]:
-                filter_obj["filter"] = filter_obj["filter"].replace(
-                    "textfile=__TEXTFILE__", f"textfile='{textfile_path}'"
-                )
 
-    # Filters
+    # Replace __TEXTFILE__ in filters
     if data.get("filters"):
+        for filter_obj in data["filters"]:
+            if "filter" in filter_obj:
+                print("🔍 Original filter:", filter_obj["filter"])
+                if "textfile=__TEXTFILE__" in filter_obj["filter"]:
+                    if not textfile_path:
+                        raise Exception("❌ __TEXTFILE__ used in filter, but no .txt input found.")
+                    print("✅ Replacing __TEXTFILE__ with:", textfile_path)
+                    filter_obj["filter"] = filter_obj["filter"].replace(
+                        "textfile=__TEXTFILE__", f"textfile='{textfile_path}'"
+                    )
+                    print("✅ Updated filter:", filter_obj["filter"])
+
+        # Add combined filter_complex
         filter_complex = ";".join(filter_obj["filter"] for filter_obj in data["filters"])
         command.extend(["-filter_complex", filter_complex])
 
@@ -111,19 +124,17 @@ def process_ffmpeg_compose(data, job_id):
 
         command.append(output_filename)
 
-    # Execute FFmpeg
+    # Log the full command for debug
+    print("🔧 Final FFmpeg command:")
+    print(" ".join(command))
+
     try:
         subprocess.run(command, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
+        print("❌ FFmpeg stderr:", e.stderr)
         raise Exception(f"FFmpeg command failed: {e.stderr}")
 
-    # Clean up (optional, currently not actually used to delete)
-    for input_data in data["inputs"]:
-        input_path = os.path.join(STORAGE_PATH, os.path.basename(input_data["file_url"]))
-        if os.path.exists(input_path):
-            os.remove(input_path)
-
-    # Metadata
+    # Get metadata
     metadata = []
     if data.get("metadata"):
         for output_filename in output_filenames:
