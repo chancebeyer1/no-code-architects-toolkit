@@ -2,7 +2,7 @@ Flask
 Werkzeug
 requests
 ffmpeg-python
-openai-whisper
+# openai-whisper
 gunicorn
 APScheduler
 srt

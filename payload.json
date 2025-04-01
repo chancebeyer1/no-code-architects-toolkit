@@ -1,0 +1,39 @@
+{
+  "inputs": [
+    { "file_url": "https://cdn.leonardo.ai/users/3d31c130-f3ae-4541-961c-275bc92ad3f2/generations/4a9edaea-47b3-46a4-b11f-5e38a95d101a/Leonardo_Kino_XL_dentist_business_0.jpg", "options": [] },
+    { "file_url": "https://b4eb914262e0f3c4e3b074f7d59e4d4f.cdn.bubble.io/f1741697427125x150675770761210530/video101.webm", "options": [] },
+    { "file_url": "https://app.box.com/shared/static/il91lhxgtu9ed6njq9jqrvne8zbu6hmo.txt", "options": [] }
+  ],
+  "filters": [
+    {
+      "filter": "[0:v]scale=1080:1920,format=rgba[bg]"
+    },
+    {
+      "filter": "[1:v]scale=iw*0.7:-1,colorkey=#00FF00:0.3:0.0,setpts=PTS-STARTPTS[webm]"
+    },
+    {
+      "filter": "[bg][webm]overlay=(W-w)/2:H-h-100:format=auto[vtmp]"
+    },
+    {
+      "filter": "[vtmp]drawtext=font='Arial':textfile=__TEXTFILE__:fontsize=100:fontcolor=#FFFFFF:borderw=3:bordercolor=#000000:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=0x80000000:boxborderw=10[outvf]"
+    }
+  ],
+  "outputs": [
+    {
+      "options": [
+        { "option": "-map", "argument": "[outvf]" },
+        { "option": "-t", "argument": "5" },
+        { "option": "-c:v", "argument": "libx264" },
+        { "option": "-preset", "argument": "fast" },
+        { "option": "-r", "argument": "30" },
+        { "option": "-c:a", "argument": "aac" },
+        { "option": "-b:a", "argument": "128k" },
+        { "option": "-shortest" },
+		{ "option": "-f", "argument": "mp4" },
+{ "option": "-movflags", "argument": "+faststart" },
+{ "option": "-pix_fmt", "argument": "yuv420p" }
+
+      ]
+    }
+  ]
+}
