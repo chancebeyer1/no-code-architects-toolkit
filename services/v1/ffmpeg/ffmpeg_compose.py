@@ -135,7 +135,15 @@ def process_ffmpeg_compose(data, job_id):
             command.append(option["option"])
             if "argument" in option and option["argument"] is not None:
                 command.append(str(option["argument"]))
-
+        
+        if format_name == "webm":
+            command.extend([
+                "-c:v", "libvpx-vp9",        # use VP9 for better quality & transparency
+                "-b:v", "1M",                # required for VP9
+                "-pix_fmt", "yuva420p",     # enable transparency
+                "-auto-alt-ref", "0"        # required for transparency
+            ])
+        
         command.append(output_filename)
 
     # Log the full command

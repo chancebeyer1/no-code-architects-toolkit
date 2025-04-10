@@ -1,0 +1,41 @@
+[
+  {
+    "data": {
+      "json": {
+        "inputs": [
+          {
+            "file_url": "https://api.apify.com/v2/key-value-stores/Jo8ALsKDJamZHh1T6/records/video-greenscree-20250201204507-7466554359053159722",
+            "options": []
+          }
+        ],
+        "filters": [
+          {
+            "filter": "[0:v]colorkey=0x00FF00:0.3:0.2,format=yuva420p,scale=w=1080:h=1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[vout]"
+
+          }
+        ],
+        "outputs": [
+          {
+            "options": [
+			  { "option": "-map", "argument": "[vout]" },
+			  { "option": "-c:v", "argument": "libvpx-vp9" },
+			  { "option": "-b:v", "argument": "2M" },
+			  { "option": "-auto-alt-ref", "argument": "0" },
+			  { "option": "-pix_fmt", "argument": "yuva420p" },
+			  { "option": "-f", "argument": "webm" }
+			],
+            "output": "/tmp/transparent.webm"
+          }
+        ],
+        "metadata": {
+          "thumbnail": true,
+          "filesize": true,
+          "duration": true,
+          "bitrate": true,
+          "encoder": true
+        },
+        "id": "ffmpeg-greenscreen-1"
+      }
+    }
+  }
+]
